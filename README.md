@@ -1,96 +1,65 @@
 # Megadados
 
-Material de estudo sobre **bancos de dados relacionais** e **processamento distribuído de dados**, escrito em Markdown e em português.
+Anotações de estudo sobre **bancos de dados relacionais** e **processamento distribuído de dados**, em português.
 
-São textos didáticos, não um software: nada aqui precisa ser compilado ou instalado. Cada arquivo parte de um problema concreto, apresenta os conceitos e os comandos necessários para resolvê-lo e termina com resumo e, quando é o caso, exercícios com gabarito.
+É um material de leitura e prática, não um software. Cada texto parte de um problema concreto, apresenta os conceitos e os comandos que o resolvem e fecha com um resumo.
 
----
-
-## Estrutura
+## Conteúdo
 
 ```
 Megadados/
-├── README.md
-├── sgbd/                          # Bancos de dados relacionais com MySQL|
-|
-└── sistemas-distribuidos/
-    └── 1_sistemas_distribuidos.md # Partições, MapReduce e Spark
+├── sgbd/                    # Bancos de dados relacionais com MySQL e SQL
+│   └── data/                # Banco de exemplo Sakila (estrutura, dados e diagrama)
+└── sistemas-distribuidos/   # Partições, MapReduce e Spark
 ```
 
----
+### SGBD e SQL
 
-## Trilha 1: SGBD e SQL (`sgbd/`)
+Um roteiro em cinco etapas, em ordem crescente de dificuldade. Cada etapa supõe as anteriores.
 
-Um roteiro progressivo: cada etapa supõe as anteriores e deixa o banco no estado esperado pela seguinte.
+| Etapa | Arquivo | Tema |
+|:-----:|---------|------|
+| 0 | [my_sql_basics.md](sgbd/my_sql_basics.md) | Banco de dados e SGBD, modelo cliente-servidor, MySQL com Docker, Workbench |
+| 1 | [sql_comandos_1.md](sgbd/sql_comandos_1.md) | Importar o banco, investigar tabelas, `CREATE`, `INSERT`, `UPDATE`, `DELETE`, `ALTER`, `DROP` |
+| 2 | [sql_comandos_2.md](sgbd/sql_comandos_2.md) | Consultas em uma tabela: `SELECT`, `DISTINCT`, `WHERE`, `LIKE`, `ORDER BY`, `LIMIT` |
+| 3 | [sql_comandos_3.md](sgbd/sql_comandos_3.md) | Agregações: `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, `HAVING` |
+| 4 | [sql_comandos_4.md](sgbd/sql_comandos_4.md) | Combinação de tabelas: `INNER`, `LEFT`, `RIGHT` e `CROSS JOIN` |
 
-| Etapa | Arquivo | O que se aprende |
-|-------|---------|------------------|
-| 0 | [my_sql_basics.md](sgbd/my_sql_basics.md) | Banco de dados × SGBD, modelo cliente-servidor, MySQL em Docker, Workbench, persistência e transações |
-| 1 | [sql_comandos_1.md](sgbd/sql_comandos_1.md) | Importar o Sakila; `SHOW` e `DESCRIBE`; tipos e restrições; `CREATE`, `INSERT`, `UPDATE`, `DELETE`, `ALTER`, `DROP`; transações |
-| 2 | [sql_comandos_2.md](sgbd/sql_comandos_2.md) | `SELECT`, `DISTINCT`, `WHERE`, `LIKE`, `NULL`, `ORDER BY`, `LIMIT` e a ordem lógica de processamento |
-| 3 | [sql_comandos_3.md](sgbd/sql_comandos_3.md) | `COUNT`, `SUM`, `AVG`, `MIN`, `MAX`, `GROUP BY`, `HAVING` e granularidade |
-| 4 | [sql_comandos_4.md](sgbd/sql_comandos_4.md) | `INNER`, `LEFT`, `RIGHT` e `CROSS JOIN`, multiplicidade, self join e `FULL OUTER JOIN` simulado |
+Os exemplos usam o **Sakila**, banco de exemplo de uma locadora de filmes, com dados fictícios. O diagrama das tabelas está em [sakila.pdf](sgbd/data/sakila.pdf).
 
-Todos os exemplos usam o **Sakila**, um banco de exemplo de uma locadora de filmes (filmes, cópias, clientes, aluguéis e pagamentos). O diagrama em [sakila.pdf](sgbd/data/sakila.pdf) ajuda a se localizar entre as tabelas.
+### Sistemas distribuídos
 
-### Como os blocos de código estão marcados
+[1_sistemas_distribuidos.md](sistemas-distribuidos/1_sistemas_distribuidos.md) trata do que muda quando os dados não cabem em uma máquina só: partições, o modelo MapReduce (*map*, *shuffle*, *reduce*) e o Spark (DataFrame, PySpark, avaliação preguiçosa, cache e tolerância a falhas).
 
-| Rótulo | Significado |
-|--------|-------------|
-| **▶ Executar** | Faz parte do roteiro; execute na ordem |
-| **✖ Erro intencional** | Deve falhar; serve para conhecer a mensagem de erro |
-| **◇ Ilustrativo** | Não execute; mostra uma ideia ou um formato |
-| *(sem rótulo)* | Saída esperada |
+## Como usar
 
-Cada bloco também indica onde rodar: no terminal do host, dentro do container ou no cliente MySQL.
-
-### Começo rápido
-
-Pré-requisito: Docker instalado. Os comandos são para bash (Linux, macOS ou WSL). A explicação completa de cada passo está na etapa 0 e na seção 3 da etapa 1.
+Para acompanhar a parte de SQL, você precisa de Docker e de um terminal bash (Linux, macOS ou WSL). Os comandos abaixo sobem o MySQL e importam o Sakila. O passo a passo comentado está na etapa 0 e na seção 3 da etapa 1.
 
 ```bash
-# 1. Subir o servidor MySQL (uma única vez)
+# Subir o servidor MySQL (só na primeira vez; depois, use: docker start sgbd-mysql)
 docker run --name sgbd-mysql \
   -e MYSQL_ROOT_PASSWORD=senha_local \
   -p 127.0.0.1:3306:3306 \
   -v sgbd-mysql-dados:/var/lib/mysql \
   -d mysql:8.0.45
 
-# 2. A partir da pasta sgbd/, importar o Sakila (estrutura primeiro, depois os dados)
+# Importar o Sakila, a partir da pasta sgbd/
 cd sgbd
 docker exec -i sgbd-mysql mysql --default-character-set=utf8mb4 -uroot -psenha_local < data/sakila-schema.sql
 docker exec -i sgbd-mysql mysql --default-character-set=utf8mb4 -uroot -psenha_local < data/sakile.sql
 
-# 3. Abrir o cliente
+# Abrir o cliente MySQL
 docker exec -it sgbd-mysql mysql --default-character-set=utf8mb4 -uroot -p
 ```
 
-> **Atenção:**
-> * Se já existir um container chamado `sgbd-mysql`, não rode o passo 1: use `docker start sgbd-mysql`.
-> * `sakila-schema.sql` apaga e recria o banco `sakila`. Qualquer alteração feita nele antes se perde.
-> * A senha `senha_local` serve só para um ambiente local de estudo. A porta fica restrita a `127.0.0.1`.
+> `senha_local` é uma senha de exemplo, para uso só no seu computador. A importação apaga e recria o banco `sakila`, se ele já existir.
 
-### Versão de referência e validação
+Nos textos, os blocos de código vêm marcados:
 
-Os materiais foram escritos e testados com a imagem oficial `mysql:8.0.45`. Os blocos **▶ Executar** das etapas 1 a 4 rodaram em sequência, sem erros, num Sakila recém-importado, e as saídas mostradas vêm dessas execuções. O que foi executado, o que foi conferido só por leitura e o que ficou pendente está em [revisao_materiais.md](sgbd/revisao_materiais.md).
+* **▶ Executar**: faz parte do roteiro; rode na ordem.
+* **✖ Erro intencional**: deve falhar, para você conhecer a mensagem.
+* **◇ Ilustrativo**: não rode; mostra só uma ideia ou um formato.
 
----
+Cada etapa de SQL termina com exercícios. As respostas ficam recolhidas, para você tentar antes de conferir.
 
-## Trilha 2: Sistemas distribuídos (`sistemas-distribuidos/`)
-
-[1_sistemas_distribuidos.md](sistemas-distribuidos/1_sistemas_distribuidos.md) trata do que acontece quando os dados não cabem mais em uma única máquina:
-
-1. **Problema:** os limites de uma consulta SQL em um servidor só e os novos problemas que a distribuição traz.
-2. **Partições:** dividir os dados entre máquinas e as limitações dessa divisão.
-3. **MapReduce:** as etapas *map*, *shuffle* e *reduce*, com um exemplo passo a passo.
-4. **Spark:** cluster, DataFrame, PySpark, avaliação preguiçosa, agregação parcial antes do shuffle, jobs/stages/tasks, cache e tolerância a falhas.
-
-A trilha de SQL ajuda a ler esta: separar linhas por chave e calcular um resultado por grupo, como no `GROUP BY` da etapa 3, lembra o *shuffle* e o *reduce*. É uma analogia de ideias, não uma descrição de como o MySQL executa a consulta.
-
----
-
-## Como ler
-
-* **Do zero:** siga a trilha de SGBD na ordem (0 → 4), executando os blocos **▶**, e depois leia sistemas distribuídos.
-* **Para consulta:** cada arquivo abre com um "contrato" (objetivos, conhecimentos prévios, estado inicial e final) e fecha com um resumo, o que permite ir direto ao tópico.
-* **Para praticar:** os exercícios ficam no fim de cada etapa de SQL. Os gabaritos estão recolhidos (`<details>`) para você tentar antes de conferir.
+Os comandos foram testados com a imagem `mysql:8.0.45`.
